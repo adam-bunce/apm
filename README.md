@@ -1,2 +1,2 @@
-# Example
-An example greeter plugin
+# APM
+Monitor in game actions per minute (APM)
