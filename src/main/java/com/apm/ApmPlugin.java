@@ -16,11 +16,14 @@ import net.runelite.client.input.KeyManager;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.task.Schedule;
 import net.runelite.client.ui.overlay.OverlayManager;
 
-import java.time.temporal.ChronoUnit;
 import java.util.LinkedList;
+
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 
 @Slf4j
 @PluginDescriptor(
@@ -37,7 +40,7 @@ public class ApmPlugin extends Plugin {
 	OverlayManager overlayManager;
 
 	@Inject
-	ApmOver1ay overlay;
+	ApmOverlay overlay;
 
 	@Inject
 	private KeyManager keyManager;
@@ -51,8 +54,7 @@ public class ApmPlugin extends Plugin {
 	@Inject
 	private ApmMouseListener mouseListener;
 
-	public int totalInputCount, startMinutes, seconds, inputCountSecond;
-	public long startMs;
+	public int totalInputCount, seconds, inputCountSecond;
 
 	@Getter
 	private final LinkedList<Integer> pastMinuteInputs = new LinkedList<>();
@@ -61,20 +63,25 @@ public class ApmPlugin extends Plugin {
 
 	public int currentApm = 0;
 
+	@Inject
+	private ScheduledExecutorService executorService;
+
+	private ScheduledFuture updateChartFuture;
+
 	@Override
 	protected void startUp() throws Exception {
 		overlayManager.add(overlay);
-
-
 		pastMinuteInputs.clear();
 
+		// Tried using @Schedule but it was off by ~15 seconds for some reason?
+		updateChartFuture = executorService.scheduleAtFixedRate(this::updateChart, 0, 1, TimeUnit.SECONDS);
 
 		keyManager.registerKeyListener(keyListener);
 		mouseManager.registerMouseListener(mouseListener);
 		inputCountSecond = 0;
 		totalInputCount = 0;
-		startMinutes = -1;
-		startMs = 0L;
+		seconds = 0;
+
 		log.info("APM started!");
 	}
 
@@ -90,8 +97,7 @@ public class ApmPlugin extends Plugin {
 		if (widgetClosed.getGroupId() == WidgetID.LOGIN_CLICK_TO_PLAY_GROUP_ID){
 			inputCountSecond = 0;
 			totalInputCount = 0;
-			startMinutes = -1;
-			startMs = 0L;
+			seconds = 0;
 			pastMinuteInputs.clear();
 
 			for (int i = 0; i < numCells; i++) pastMinuteInputs.add(0);
@@ -99,24 +105,18 @@ public class ApmPlugin extends Plugin {
 		}
 	}
 
-	// the graph starts rolling out after 75 seconds not 70 for some reason
-	@Schedule(
-			period = 1000,
-			unit = ChronoUnit.MILLIS
-	)
-	public void doEverySecond() {
-
+	public void updateChart() {
 		pastMinuteInputs.add(inputCountSecond);
 		pastMinuteInputs.remove();
 
-		// INFO keylistener is disabled while logging in, thats why the # of inputs
-		// is always 4 (click sign in, click password box, click login, click play)
-
+		seconds++;
 		inputCountSecond = 0;
 		int hold = 0;
+
 		for (Integer integer : pastMinuteInputs) {
 			hold += integer;
 		}
+
 		currentApm = hold;
 	}
 

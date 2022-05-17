@@ -9,10 +9,9 @@ public class ApmMouseListener implements MouseListener {
     @Inject
     ApmPlugin plugin;
 
+    @Inject
+    ApmConfig config;
 
-    // sometimes this counts as two inputs when right-clicking
-    // might just be that spamming in league made it mad sensitive, looks fine if
-    // i click properly
     @Override
     public MouseEvent mouseClicked(MouseEvent mouseEvent) {
         return mouseEvent;
@@ -25,9 +24,10 @@ public class ApmMouseListener implements MouseListener {
 
     @Override
     public MouseEvent mouseReleased(MouseEvent mouseEvent) {
-        plugin.totalInputCount++;
-        plugin.inputCountSecond++;
-        System.out.println(mouseEvent.getButton());
+        if (config.includeMouseClicks()) {
+            plugin.totalInputCount++;
+            plugin.inputCountSecond++;
+        }
         return mouseEvent;
     }
 

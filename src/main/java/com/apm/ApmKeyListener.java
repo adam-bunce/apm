@@ -9,6 +9,8 @@ public class ApmKeyListener implements KeyListener {
     @Inject
     ApmPlugin plugin;
 
+    @Inject
+    ApmConfig config;
 
     @Override
     public void keyTyped(KeyEvent e) {
@@ -22,7 +24,9 @@ public class ApmKeyListener implements KeyListener {
 
     @Override
     public void keyReleased(KeyEvent e) {
-        plugin.totalInputCount++;
-        plugin.inputCountSecond++;
+        if (config.includeKeyPresses()) {
+            plugin.totalInputCount++;
+            plugin.inputCountSecond++;
+        }
     }
 }
