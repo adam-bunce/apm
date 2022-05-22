@@ -88,6 +88,19 @@ public class ApmPlugin extends Plugin {
 	@Override
 	protected void shutDown() throws Exception {
 		overlayManager.remove(overlay);
+
+		updateChartFuture.cancel(true);
+		updateChartFuture = null;
+		executorService.shutdown();
+		executorService = null;
+
+		keyManager.unregisterKeyListener(keyListener);
+		keyListener = null;
+		mouseManager.unregisterMouseListener(mouseListener);
+		mouseListener = null;
+
+		pastMinuteInputs.clear();
+
 		log.info("APM stopped!");
 	}
 
