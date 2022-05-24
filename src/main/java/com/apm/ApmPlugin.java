@@ -45,13 +45,11 @@ public class ApmPlugin extends Plugin {
 	@Inject
 	private KeyManager keyManager;
 
-	@Inject
 	private ApmKeyListener keyListener;
 
 	@Inject
 	private MouseManager mouseManager;
 
-	@Inject
 	private ApmMouseListener mouseListener;
 
 	public int totalInputCount, seconds, inputCountSecond;
@@ -62,6 +60,7 @@ public class ApmPlugin extends Plugin {
 	private final int numCells = 60;
 
 	public int currentApm = 0;
+	public int max, min = 0;
 
 	@Inject
 	private ScheduledExecutorService executorService;
@@ -70,17 +69,23 @@ public class ApmPlugin extends Plugin {
 
 	@Override
 	protected void startUp() throws Exception {
-		overlayManager.add(overlay);
 		pastMinuteInputs.clear();
+		for (int i = 0; i < numCells; i++) pastMinuteInputs.add(0);
+
+		overlayManager.add(overlay);
 
 		// Tried using @Schedule but it was off by ~15 seconds for some reason?
 		updateChartFuture = executorService.scheduleAtFixedRate(this::updateChart, 0, 1, TimeUnit.SECONDS);
 
+		keyListener = new ApmKeyListener(this, config);
 		keyManager.registerKeyListener(keyListener);
+		mouseListener = new ApmMouseListener(this, config);
 		mouseManager.registerMouseListener(mouseListener);
+
 		inputCountSecond = 0;
 		totalInputCount = 0;
 		seconds = 0;
+
 
 		log.info("APM started!");
 	}
@@ -91,8 +96,6 @@ public class ApmPlugin extends Plugin {
 
 		updateChartFuture.cancel(true);
 		updateChartFuture = null;
-		executorService.shutdown();
-		executorService = null;
 
 		keyManager.unregisterKeyListener(keyListener);
 		keyListener = null;
@@ -100,7 +103,6 @@ public class ApmPlugin extends Plugin {
 		mouseListener = null;
 
 		pastMinuteInputs.clear();
-
 		log.info("APM stopped!");
 	}
 
@@ -111,8 +113,8 @@ public class ApmPlugin extends Plugin {
 			inputCountSecond = 0;
 			totalInputCount = 0;
 			seconds = 0;
-			pastMinuteInputs.clear();
 
+			pastMinuteInputs.clear();
 			for (int i = 0; i < numCells; i++) pastMinuteInputs.add(0);
 
 		}
@@ -131,19 +133,21 @@ public class ApmPlugin extends Plugin {
 		}
 
 		currentApm = hold;
+		max = getMax();
+		min = getMin();
 	}
 
-	public Integer getMax() {
+	private Integer getMax() {
 		Integer currentMax = 0;
-		for (Integer integer : pastMinuteInputs) {
-			if (integer > currentMax) {
-				currentMax = integer;
+			for (Integer integer : pastMinuteInputs) {
+				if (integer > currentMax) {
+					currentMax = integer;
+				}
 			}
-		}
 		return currentMax;
 	}
 
-	public Integer getMin(){
+	private Integer getMin(){
 		Integer currentMin = 0;
 		for (Integer integer : pastMinuteInputs) {
 			if (integer < currentMin) {

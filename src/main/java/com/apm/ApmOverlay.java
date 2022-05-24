@@ -105,8 +105,8 @@ public class ApmOverlay extends OverlayPanel {
 
             int maxValue;
             int minValue;
-                maxValue = plugin.getMax();
-                minValue = plugin.getMin();
+                maxValue = plugin.max;
+                minValue = plugin.min;
 
             // change max inputs to 100, prevents div by 0 in-case of error
             if (maxValue <= 0) {

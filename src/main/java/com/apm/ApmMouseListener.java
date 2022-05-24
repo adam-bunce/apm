@@ -1,16 +1,16 @@
 package com.apm;
 
 import net.runelite.client.input.MouseListener;
-
-import javax.inject.Inject;
 import java.awt.event.MouseEvent;
 
 public class ApmMouseListener implements MouseListener {
-    @Inject
-    ApmPlugin plugin;
+    private final ApmConfig config;
+    private final ApmPlugin plugin;
 
-    @Inject
-    ApmConfig config;
+    ApmMouseListener(ApmPlugin plugin, ApmConfig config)  {
+        this.plugin = plugin;
+        this.config = config;
+    }
 
     @Override
     public MouseEvent mouseClicked(MouseEvent mouseEvent) {
