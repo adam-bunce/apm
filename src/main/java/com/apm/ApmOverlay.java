@@ -21,8 +21,7 @@ public class ApmOverlay extends OverlayPanel {
         this.plugin = plugin;
         this.config = config;
 
-        setLayer(OverlayLayer.ABOVE_WIDGETS);
-        setPosition(OverlayPosition.BOTTOM_LEFT);
+        setPosition(OverlayPosition.TOP_LEFT);
     }
 
     LayoutableRenderableEntity apmGraph = new LayoutableRenderableEntity() {
@@ -30,6 +29,12 @@ public class ApmOverlay extends OverlayPanel {
         @Override
         public Dimension render(Graphics2D graphics) {
             graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+
+            if (config.toggleBehind()) {
+                setLayer(OverlayLayer.ABOVE_SCENE);
+            } else {
+                setLayer(OverlayLayer.ABOVE_WIDGETS);
+            }
 
             int overlayWidth, overlayHeight;                // width and height of the entire overlay
             try {
@@ -43,7 +48,7 @@ public class ApmOverlay extends OverlayPanel {
 
             int width, height, tempX;                       // width and height of the graph
 
-            int marginGraphHeight = 16;
+            int marginGraphHeight = config.fontSize();
             int marginGraphWidth = 10;
 
             if (config.hideMargin()){
@@ -57,29 +62,29 @@ public class ApmOverlay extends OverlayPanel {
             if (config.hideGraph()) {
                 width = 0;
                 height = 0;
-                overlayHeight = 16;
+                overlayHeight = config.fontSize();
             }
 
             //background rect
-            graphics.setColor(new Color(0, 0, 0, 70));
+            graphics.setColor(config.overlayBackgroundColor());
             graphics.fillRect(0, 0, overlayWidth, overlayHeight);
 
             //outside border
-            graphics.setColor(new Color(0, 0, 0, 100));
+            graphics.setColor(config.overlayBorderColor());
             graphics.drawRect(0, 0, overlayWidth, overlayHeight);
 
             //inside border
-            graphics.setColor(new Color(0, 0, 0, 70));
+            graphics.setColor(config.graphBorderColor());
             int val = config.hideMargin() ? 0 : marginGraphWidth - 1;
             graphics.drawRect(val, marginGraphHeight + 1, width, height);
 
             //inside rect
-            graphics.setColor(new Color(0, 0, 0, 120));
+            graphics.setColor(config.graphBackgroundColor());
             graphics.fillRect(val, marginGraphHeight + 1, width, height);
 
             graphics.setColor(config.textColor());
             String fontName = "Runescape Small";
-            Font userFont = new Font(fontName, Font.PLAIN, 16);
+            Font userFont = new Font(fontName, config.fontStyle().getValue(), config.fontSize());
             graphics.setFont(userFont);
 
             //Right label
@@ -110,7 +115,7 @@ public class ApmOverlay extends OverlayPanel {
 
             // change max inputs to 100, prevents div by 0 in-case of error
             if (maxValue <= 0) {
-                maxValue = 100;
+                maxValue = 10;
             }
 
             int tempMax = maxValue;
